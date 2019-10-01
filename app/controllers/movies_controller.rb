@@ -1,8 +1,12 @@
 class MoviesController < ApplicationController
 
+  def movie_params
+    params.require(:movie).permit(:title, :rating, :description, :release_date)
+  end
+  
     def initialize
-        @all_ratings = Movie.all_ratings
-        super
+        #@all_ratings = Movie.all_ratings
+        #super
     end
 
     def show
@@ -10,41 +14,18 @@ class MoviesController < ApplicationController
         @movie = Movie.find(id)
     end
 
-    def index
-        redirect = false
-
-        if params[:sort]
-            @sorting = params[:sort]
-        elsif session[:sort]
-            @sorting = session[:sort]
-            redirect = true
-        end
-
-        if params[:ratings]
-            @ratings = params[:ratings]
-        elsif session[:ratings]
-            @ratings = session[:ratings]
-            redirect = true
+      def index
+         @movies = Movie.all
+         @all_ratings = Movie.all_ratings
+         @movies = Movie.order(params[:sort_by])
+         @sort_column = params[:sort_by]
+         #@selected_ratings 
+        if(params[:ratings].nil? and session[:ratings].nil?)
+          @selected_ratings = Movie.populated
         else
-            @all_ratings.each do |rat|
-                (@ratings ||= { })[rat] = 1
-            end
-            redirect = true
+          @selected_ratings = params[:ratings] || session[:ratings]
         end
-
-        if redirect
-            redirect_to movies_path(:sort => @sorting, :ratings => @ratings)
-        end
-
-        Movie.find(:all, :order => @sorting ? @sorting : :id).each do |mv|
-            if @ratings.keys.include? mv[:rating]
-                (@movies ||= [ ]) << mv
-            end
-        end
-
-        session[:sort]    = @sorting
-        session[:ratings] = @ratings
-    end
+          end
 
     def new
         
